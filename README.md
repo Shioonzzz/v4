@@ -1,87 +1,255 @@
-<div align="center">
-  <img alt="Logo" src="https://raw.githubusercontent.com/bchiang7/v4/main/src/images/logo.png" width="100" />
-</div>
-<h1 align="center">
-  brittanychiang.com - v4
-</h1>
-<p align="center">
-  The fourth iteration of <a href="https://brittanychiang.com" target="_blank">brittanychiang.com</a> built with <a href="https://www.gatsbyjs.org/" target="_blank">Gatsby</a> and hosted with <a href="https://www.netlify.com/" target="_blank">Netlify</a>
-</p>
-<p align="center">
-  Previous iterations:
-  <a href="https://github.com/bchiang7/v1" target="_blank">v1</a>,
-  <a href="https://github.com/bchiang7/v2" target="_blank">v2</a>,
-  <a href="https://github.com/bchiang7/bchiang7.github.io" target="_blank">v3</a>
-</p>
-<p align="center">
-  <a href="https://app.netlify.com/sites/brittanychiang/deploys" target="_blank">
-    <img src="https://api.netlify.com/api/v1/badges/1963b488-7b78-48c9-9e2d-6fb5e47ab3af/deploy-status" alt="Netlify Status" />
-  </a>
-</p>
+# Portfolio v4 with Smart Financial Analyzer Bot
 
-![demo](https://raw.githubusercontent.com/bchiang7/v4/main/src/images/demo.png)
+Portfolio website dengan integrasi Smart Financial Analyzer Bot yang memiliki visualisasi 3D interaktif dan sistem login.
 
-## 🚨 Forking this repo (please read!)
+## 🚀 Quick Start
 
-Many people have contacted me asking me if they can use this code for their own website, and the answer to that question is usually **yes, with attribution**.
+### Prerequisites
+- Node.js 18+
+- npm atau yarn
+- Git
 
-I value keeping my site open source, but as you all know, _**plagiarism is bad**_. It's always disheartening whenever I find that someone has copied my site without giving me credit. I spent a non-trivial amount of effort building and designing this iteration of my website, and I am proud of it! All I ask of you all is to not claim this effort as your own.
+### Installation
+```bash
+# Clone repository
+git clone https://github.com/Shioonzzz/v4.git
+cd v4
 
-Please also note that I did not build this site with the intention of it being a starter theme, so if you have questions about implementation, please refer to the [Gatsby docs](https://www.gatsbyjs.org/docs/).
+# Install dependencies
+npm install
 
-### TL;DR
+# Start development server
+npm run develop
+```
 
-Yes, you can fork this repo. Please give me proper credit by linking back to [brittanychiang.com](https://brittanychiang.com). Thanks!
+## 🤖 Bot Integration
 
-## 🛠 Installation & Set Up
+### File Structure yang Ditambahkan
+```
+src/
+├── components/
+│   ├── BotLogin.js           # Komponen login bot
+│   ├── BotDashboard.js       # Interface utama bot
+│   └── Bot3DViewer.js        # Visualisasi 3D
+├── hooks/
+│   ├── useAuth.js            # Authentication hook
+│   └── useBotAPI.js          # Bot API integration
+├── pages/
+│   └── financial-analyzer.js # Halaman utama bot
+└── content/
+    └── projects/
+        └── smart-financial-analyzer.md  # Project content
+```
 
-1. Install the Gatsby CLI
+### Demo Credentials
+Untuk testing, gunakan kredensial berikut:
+- **Email**: `demo@financialbot.com`
+- **Password**: `demo123`
 
-   ```sh
-   npm install -g gatsby-cli
+Atau:
+- **Email**: `user@test.com` 
+- **Password**: `password`
+
+### Features Bot
+- ✅ **AI-Powered Analysis**: Analisis keuangan dengan ML
+- ✅ **3D Visualization**: Visualisasi data dengan Three.js
+- ✅ **Authentication System**: Login/Register dengan session management
+- ✅ **Real-time Chat**: Interface chat dengan bot
+- ✅ **Demo Mode**: Preview tanpa login
+- ✅ **Responsive Design**: Mobile-friendly interface
+
+## 📁 File Integration Guide
+
+### 1. Content Files
+```bash
+# Buat file markdown untuk project
+content/projects/smart-financial-analyzer.md
+```
+
+### 2. Page Components  
+```bash
+# Halaman utama bot
+src/pages/financial-analyzer.js
+```
+
+### 3. React Components
+```bash
+# Komponen login
+src/components/BotLogin.js
+
+# Dashboard bot
+src/components/BotDashboard.js
+
+# 3D Viewer untuk model Anda
+src/components/Bot3DViewer.js
+```
+
+### 4. Hooks & Utils
+```bash
+# Authentication logic
+src/hooks/useAuth.js
+
+# Bot API integration
+src/hooks/useBotAPI.js
+```
+
+### 5. Navigation Updates
+```bash
+# Update navigasi untuk include bot link
+src/components/nav.js
+
+# Update projects section
+src/components/sections/Projects.js
+```
+
+### 6. Configuration
+```bash
+# Gatsby configuration
+gatsby-config.js
+gatsby-node.js
+gatsby-browser.js
+
+# Dependencies
+package.json
+```
+
+## 🎨 3D Model Integration
+
+### Menambahkan 3D File Anda
+
+1. **Letakkan file 3D** di folder `static/models/`:
+   ```bash
+   static/
+   └── models/
+       └── your-3d-model.glb  # atau .gltf, .fbx, .obj
    ```
 
-2. Install and use the correct version of Node using [NVM](https://github.com/nvm-sh/nvm)
-
-   ```sh
-   nvm install
+2. **Update Bot3DViewer.js**:
+   ```javascript
+   // Ganti di dalam createFinancialVisualization()
+   const loader = new GLTFLoader();
+   loader.load('/models/your-3d-model.glb', (gltf) => {
+     const model = gltf.scene;
+     model.scale.set(2, 2, 2);
+     sceneRef.current.add(model);
+     objectsRef.current.customModel = model;
+   });
    ```
 
-3. Install dependencies
-
-   ```sh
-   yarn
+3. **Animasi Custom**:
+   ```javascript
+   // Dalam animate() function
+   if (objectsRef.current.customModel) {
+     objectsRef.current.customModel.rotation.y += 0.01;
+   }
    ```
 
-4. Start the development server
+## 🔧 Customization
 
-   ```sh
-   npm start
-   ```
+### Mengubah Warna Theme
+Edit di `src/styles/variables.js`:
+```javascript
+colors: {
+  green: '#64ffda',     // Warna aksen utama
+  navy: '#0a192f',      // Background gelap
+  lightNavy: '#112240', // Background komponen
+  // dst...
+}
+```
 
-## 🚀 Building and Running for Production
+### Menambah Fitur Bot Baru
+1. Tambah function di `useBotAPI.js`
+2. Update response logic di `simulateBotResponse()`  
+3. Tambah UI components di `BotDashboard.js`
 
-1. Generate a full static production build
+### Custom Authentication
+Replace memory storage dengan real backend:
+```javascript
+// Di useAuth.js
+const saveUserToStorage = (userData) => {
+  localStorage.setItem('user', JSON.stringify(userData));
+};
+```
 
-   ```sh
-   npm run build
-   ```
+## 🚀 Deployment
 
-1. Preview the site as it will appear once deployed
+### Netlify (Recommended)
+```bash
+# Build production
+npm run build
 
-   ```sh
-   npm run serve
-   ```
+# Deploy to Netlify
+# Connect your repo dan set build command: npm run build
+# Publish directory: public/
+```
 
-## 🎨 Color Reference
+### Vercel
+```bash
+# Install Vercel CLI
+npm i -g vercel
 
-| Color          | Hex                                                                |
-| -------------- | ------------------------------------------------------------------ |
-| Navy           | ![#0a192f](https://via.placeholder.com/10/0a192f?text=+) `#0a192f` |
-| Light Navy     | ![#112240](https://via.placeholder.com/10/0a192f?text=+) `#112240` |
-| Lightest Navy  | ![#233554](https://via.placeholder.com/10/303C55?text=+) `#233554` |
-| Slate          | ![#8892b0](https://via.placeholder.com/10/8892b0?text=+) `#8892b0` |
-| Light Slate    | ![#a8b2d1](https://via.placeholder.com/10/a8b2d1?text=+) `#a8b2d1` |
-| Lightest Slate | ![#ccd6f6](https://via.placeholder.com/10/ccd6f6?text=+) `#ccd6f6` |
-| White          | ![#e6f1ff](https://via.placeholder.com/10/e6f1ff?text=+) `#e6f1ff` |
-| Green          | ![#64ffda](https://via.placeholder.com/10/64ffda?text=+) `#64ffda` |
+# Deploy  
+vercel
+```
+
+### Manual Deploy
+```bash
+# Build static files
+npm run build
+
+# Upload folder 'public/' ke hosting Anda
+```
+
+## 🔒 Security Notes
+
+⚠️ **Important**: File yang disediakan menggunakan in-memory storage untuk demo. Untuk production:
+
+1. **Ganti dengan real backend authentication**
+2. **Implementasi proper session management** 
+3. **Add input validation & sanitization**
+4. **Setup HTTPS dan security headers**
+5. **Implement rate limiting untuk API calls**
+
+## 📱 Mobile Optimization
+
+Bot sudah responsive, tapi untuk optimasi lebih lanjut:
+- Test di berbagai device sizes
+- Optimasi 3D rendering untuk mobile
+- Pertimbangkan lazy loading untuk model 3D
+
+## 🐛 Troubleshooting
+
+### Three.js Build Issues
+```bash
+# Jika ada error dengan Three.js saat build
+npm install --save-dev @types/three
+```
+
+### Memory Storage Warning  
+Ini normal untuk demo. User data akan hilang saat refresh. Implement localStorage atau backend untuk persistence.
+
+### 3D Model Tidak Muncul
+1. Check file path di `static/models/`
+2. Pastikan format file didukung (GLB recommended)
+3. Check browser console untuk error
+
+## 📞 Support
+
+Jika ada pertanyaan atau butuh bantuan integrasi:
+1. Check GitHub Issues
+2. Review kode comments
+3. Test di development mode dulu
+
+## 🎯 Next Steps
+
+Setelah integrasi berhasil:
+1. **Replace demo data** dengan real financial data
+2. **Integrate dengan backend API** untuk authentication  
+3. **Add real financial calculations** 
+4. **Implement data persistence**
+5. **Add more 3D interactions**
+6. **Setup analytics tracking**
+
+---
+
+**Happy coding! 🚀** Semoga bot financial analyzer Anda sukses!

@@ -1,13 +1,15 @@
+// gatsby-config.js - Updated configuration for bot integration
 const config = require('./src/config');
 
 module.exports = {
   siteMetadata: {
-    title: 'Brittany Chiang',
-    description:
-      'Brittany Chiang is a software engineer who specializes in building (and occasionally designing) exceptional digital experiences.',
-    siteUrl: 'https://brittanychiang.com', // No trailing slash allowed!
-    image: '/og.png', // Path to your image you placed in the 'static' folder
-    twitterUsername: '@bchiang7',
+    title: config.siteTitle,
+    description: config.siteDescription,
+    siteUrl: config.siteUrl,
+    author: config.name,
+    // Add bot-specific metadata
+    botTitle: 'Smart Financial Analyzer',
+    botDescription: 'AI-powered financial analysis with 3D visualization',
   },
   plugins: [
     `gatsby-plugin-react-helmet`,
@@ -15,32 +17,23 @@ module.exports = {
     `gatsby-plugin-image`,
     `gatsby-plugin-sharp`,
     `gatsby-transformer-sharp`,
-    `gatsby-plugin-sitemap`,
-    `gatsby-plugin-robots-txt`,
     {
       resolve: `gatsby-plugin-manifest`,
       options: {
-        name: 'Brittany Chiang',
-        short_name: 'Brittany Chiang',
-        start_url: '/',
+        name: config.siteTitle,
+        short_name: config.siteTitle,
+        start_url: `/`,
         background_color: config.colors.darkNavy,
         theme_color: config.colors.navy,
-        display: 'minimal-ui',
-        icon: 'src/images/logo.png',
+        display: `minimal-ui`,
+        icon: `src/images/logo.png`,
       },
     },
     `gatsby-plugin-offline`,
     {
       resolve: `gatsby-source-filesystem`,
       options: {
-        name: `images`,
-        path: `${__dirname}/src/images`,
-      },
-    },
-    {
-      resolve: 'gatsby-source-filesystem',
-      options: {
-        name: 'content',
+        name: `content`,
         path: `${__dirname}/content/`,
       },
     },
@@ -63,16 +56,14 @@ module.exports = {
       options: {
         plugins: [
           {
-            // https://www.gatsbyjs.org/packages/gatsby-remark-external-links
-            resolve: 'gatsby-remark-external-links',
+            resolve: `gatsby-remark-external-links`,
             options: {
-              target: '_blank',
-              rel: 'nofollow noopener noreferrer',
+              target: `_blank`,
+              rel: `noreferrer noopener`,
             },
           },
           {
-            // https://www.gatsbyjs.org/packages/gatsby-remark-images
-            resolve: 'gatsby-remark-images',
+            resolve: `gatsby-remark-images`,
             options: {
               maxWidth: 700,
               linkImagesToOriginal: true,
@@ -81,48 +72,16 @@ module.exports = {
             },
           },
           {
-            // https://www.gatsbyjs.org/packages/gatsby-remark-code-titles/
-            resolve: 'gatsby-remark-code-titles',
-          }, // IMPORTANT: this must be ahead of other plugins that use code blocks
+            resolve: `gatsby-remark-code-titles`,
+          },
           {
-            // https://www.gatsbyjs.org/packages/gatsby-remark-prismjs
             resolve: `gatsby-remark-prismjs`,
             options: {
-              // Class prefix for <pre> tags containing syntax highlighting;
-              // defaults to 'language-' (e.g. <pre class="language-js">).
-              // If your site loads Prism into the browser at runtime,
-              // (e.g. for use with libraries like react-live),
-              // you may use this to prevent Prism from re-processing syntax.
-              // This is an uncommon use-case though;
-              // If you're unsure, it's best to use the default value.
               classPrefix: 'language-',
-              // This is used to allow setting a language for inline code
-              // (i.e. single backticks) by creating a separator.
-              // This separator is a string and will do no white-space
-              // stripping.
-              // A suggested value for English speakers is the non-ascii
-              // character '›'.
               inlineCodeMarker: null,
-              // This lets you set up language aliases.  For example,
-              // setting this to '{ sh: "bash" }' will let you use
-              // the language "sh" which will highlight using the
-              // bash highlighter.
               aliases: {},
-              // This toggles the display of line numbers globally alongside the code.
-              // To use it, add the following line in gatsby-browser.js
-              // right after importing the prism color scheme:
-              //  require("prismjs/plugins/line-numbers/prism-line-numbers.css")
-              // Defaults to false.
-              // If you wish to only show line numbers on certain code blocks,
-              // leave false and use the {numberLines: true} syntax below
               showLineNumbers: false,
-              // If setting this to true, the parser won't handle and highlight inline
-              // code used in markdown i.e. single backtick code like `this`.
               noInlineHighlight: false,
-              // This adds a new language definition to Prism or extend an already
-              // existing language definition. More details on this option can be
-              // found under the header "Add new language definition or extend an
-              // existing language" below.
               languageExtensions: [
                 {
                   language: 'superscript',
@@ -137,8 +96,6 @@ module.exports = {
                   },
                 },
               ],
-              // Customize the prompt used in shell output
-              // Values below are default
               prompt: {
                 user: 'root',
                 host: 'localhost',
@@ -152,8 +109,101 @@ module.exports = {
     {
       resolve: `gatsby-plugin-google-analytics`,
       options: {
-        trackingId: 'UA-45666519-2',
+        trackingId: config.googleAnalyticsID,
+      },
+    },
+    // Add support for Three.js and WebGL
+    {
+      resolve: 'gatsby-plugin-webpack-bundle-analyser-v2',
+      options: {
+        devMode: false,
+      },
+    },
+    // PWA capabilities for the bot
+    {
+      resolve: `gatsby-plugin-pwa`,
+      options: {
+        name: config.siteTitle,
+        short_name: config.siteTitle,
+        start_url: `/`,
+        background_color: config.colors.darkNavy,
+        theme_color: config.colors.navy,
+        display: `standalone`,
+        icon: `src/images/logo.png`,
+        cache_busting_mode: 'none',
+        include: [`/static/**/*`],
+        exclude: [`/financial-analyzer/**/*`], // Don't cache bot pages for real-time data
+      },
+    },
+    // SEO optimization
+    {
+      resolve: 'gatsby-plugin-robots-txt',
+      options: {
+        host: config.siteUrl,
+        sitemap: `${config.siteUrl}/sitemap.xml`,
+        policy: [
+          {
+            userAgent: '*',
+            allow: '/',
+            disallow: ['/financial-analyzer/admin'], // Protect admin areas
+          },
+        ],
+      },
+    },
+    // Sitemap generation
+    {
+      resolve: `gatsby-plugin-sitemap`,
+      options: {
+        exclude: [`/financial-analyzer/admin/**`, `/dev-404-page/`],
+        query: `
+          {
+            site {
+              siteMetadata {
+                siteUrl
+              }
+            }
+            allSitePage {
+              nodes {
+                path
+              }
+            }
+          }
+        `,
+        resolvePages: ({
+          allSitePage: { nodes: allPages },
+        }) => {
+          return allPages.map(page => {
+            return { ...page }
+          })
+        },
+        serialize: ({ path }) => {
+          return {
+            url: path,
+            changefreq: path === '/financial-analyzer' ? 'daily' : 'monthly',
+            priority: path === '/' ? 1.0 : path === '/financial-analyzer' ? 0.9 : 0.7,
+          }
+        },
       },
     },
   ],
 };
+
+// Environment-specific configurations
+if (process.env.NODE_ENV === 'development') {
+  module.exports.plugins.push({
+    resolve: `gatsby-plugin-webpack-dev-middleware`,
+    options: {
+      // Development-specific webpack middleware
+    },
+  });
+}
+
+if (process.env.NODE_ENV === 'production') {
+  // Add production-specific optimizations
+  module.exports.plugins.push({
+    resolve: `gatsby-plugin-preact`,
+    options: {
+      // Use Preact in production for smaller bundle size
+    },
+  });
+}

@@ -1,13 +1,15 @@
+// src/components/sections/Projects.js - Updated to include Financial Bot
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useStaticQuery, graphql } from 'gatsby';
+import { GatsbyImage, getImage } from 'gatsby-plugin-image';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import styled from 'styled-components';
-import { srConfig } from '@config';
-import sr from '@utils/sr';
-import { Icon } from '@components/icons';
-import { usePrefersReducedMotion } from '@hooks';
+import { srConfig } from '../config';
+import sr from '../utils/sr';
+import { Icon } from '../components/icons';
+import { mixins, media, Section, Button } from '../styles';
 
-const StyledProjectsSection = styled.section`
+const StyledProjectsSection = styled(Section)`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,46 +27,38 @@ const StyledProjectsSection = styled.section`
   }
 
   .projects-grid {
-    ${({ theme }) => theme.mixins.resetList};
+    ${mixins.resetList};
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     grid-gap: 15px;
     position: relative;
     margin-top: 50px;
 
-    @media (max-width: 1080px) {
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    }
+    ${media.desktop`grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));`}
   }
 
   .more-button {
-    ${({ theme }) => theme.mixins.button};
+    ${mixins.button};
     margin: 80px auto 0;
   }
 `;
 
-const StyledProject = styled.li`
+const StyledProject = styled.div`
   position: relative;
   cursor: default;
   transition: var(--transition);
 
-  @media (prefers-reduced-motion: no-preference) {
-    &:hover,
-    &:focus-within {
-      .project-inner {
-        transform: translateY(-7px);
-      }
+  &:hover,
+  &:focus {
+    outline: 0;
+    .project-inner {
+      transform: translateY(-7px);
     }
   }
 
-  a {
-    position: relative;
-    z-index: 1;
-  }
-
   .project-inner {
-    ${({ theme }) => theme.mixins.boxShadow};
-    ${({ theme }) => theme.mixins.flexBetween};
+    ${mixins.boxShadow};
+    ${mixins.flexBetween};
     flex-direction: column;
     align-items: flex-start;
     position: relative;
@@ -72,12 +66,13 @@ const StyledProject = styled.li`
     padding: 2rem 1.75rem;
     border-radius: var(--border-radius);
     background-color: var(--light-navy);
+    border: 1px solid var(--light-navy);
     transition: var(--transition);
     overflow: auto;
   }
 
   .project-top {
-    ${({ theme }) => theme.mixins.flexBetween};
+    ${mixins.flexBetween};
     margin-bottom: 35px;
 
     .folder {
@@ -95,7 +90,7 @@ const StyledProject = styled.li`
       color: var(--light-slate);
 
       a {
-        ${({ theme }) => theme.mixins.flexCenter};
+        ${mixins.flexCenter};
         padding: 5px 7px;
 
         &.external {
@@ -115,7 +110,7 @@ const StyledProject = styled.li`
   }
 
   .project-title {
-    margin: 0 0 10px;
+    margin: 0 0 10px 0;
     color: var(--lightest-slate);
     font-size: var(--fz-xxl);
 
@@ -140,7 +135,7 @@ const StyledProject = styled.li`
     font-size: 17px;
 
     a {
-      ${({ theme }) => theme.mixins.inlineLink};
+      ${mixins.inlineLink};
     }
   }
 
@@ -163,6 +158,35 @@ const StyledProject = styled.li`
       }
     }
   }
+
+  // Special styling for featured bot project
+  &.featured-bot {
+    .project-inner {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--light-navy) 100%);
+      border: 1px solid var(--green);
+      box-shadow: 0 10px 30px -15px var(--green-shadow);
+      
+      &:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px -15px var(--green-shadow);
+      }
+    }
+
+    .folder {
+      color: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    .project-title {
+      color: var(--green);
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+  }
 `;
 
 const Projects = () => {
@@ -182,6 +206,7 @@ const Projects = () => {
               tech
               github
               external
+              featured
             }
             html
           }
@@ -194,13 +219,8 @@ const Projects = () => {
   const revealTitle = useRef(null);
   const revealArchiveLink = useRef(null);
   const revealProjects = useRef([]);
-  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (prefersReducedMotion) {
-      return;
-    }
-
     sr.reveal(revealTitle.current, srConfig());
     sr.reveal(revealArchiveLink.current, srConfig());
     revealProjects.current.forEach((ref, i) => sr.reveal(ref, srConfig(i * 100)));
@@ -211,16 +231,47 @@ const Projects = () => {
   const firstSix = projects.slice(0, GRID_LIMIT);
   const projectsToShow = showMore ? projects : firstSix;
 
-  const projectInner = node => {
+  // Add Smart Financial Analyzer as a special project
+  const botProject = {
+    node: {
+      frontmatter: {
+        title: 'Smart Financial Analyzer Bot',
+        tech: ['React', 'Python', 'TensorFlow', 'Three.js', 'FastAPI', 'WebSocket'],
+        github: 'https://github.com/yourusername/smart-financial-analyzer',
+        external: '/financial-analyzer',
+        featured: true
+      },
+      html: `
+        <p>
+          Bot AI canggih yang menganalisis kondisi keuangan dengan visualisasi 3D interaktif. 
+          Menggunakan machine learning untuk insights personal dan rekomendasi investasi yang 
+          disesuaikan dengan profil risiko pengguna.
+        </p>
+        <p>
+          Fitur utama meliputi analisis pengeluaran real-time, rekomendasi investasi berbasis AI, 
+          risk assessment personal, dan portfolio tracking dengan alert sistem.
+        </p>
+      `
+    }
+  };
+
+  // Insert bot project at the beginning
+  const allProjectsToShow = [botProject, ...projectsToShow];
+
+  const projectInner = (node) => {
     const { frontmatter, html } = node;
-    const { github, external, title, tech } = frontmatter;
+    const { github, external, title, tech, featured } = frontmatter;
 
     return (
       <div className="project-inner">
         <header>
           <div className="project-top">
             <div className="folder">
-              <Icon name="Folder" />
+              {title === 'Smart Financial Analyzer Bot' ? (
+                <Icon name="Robot" />
+              ) : (
+                <Icon name="Folder" />
+              )}
             </div>
             <div className="project-links">
               {github && (
@@ -233,8 +284,9 @@ const Projects = () => {
                   href={external}
                   aria-label="External Link"
                   className="external"
-                  target="_blank"
-                  rel="noreferrer">
+                  target={title === 'Smart Financial Analyzer Bot' ? '_self' : '_blank'}
+                  rel="noreferrer"
+                >
                   <Icon name="External" />
                 </a>
               )}
@@ -242,12 +294,19 @@ const Projects = () => {
           </div>
 
           <h3 className="project-title">
-            <a href={external} target="_blank" rel="noreferrer">
+            <a 
+              href={external || github} 
+              target={title === 'Smart Financial Analyzer Bot' ? '_self' : '_blank'}
+              rel="noreferrer"
+            >
               {title}
             </a>
           </h3>
 
-          <div className="project-description" dangerouslySetInnerHTML={{ __html: html }} />
+          <div
+            className="project-description"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         </header>
 
         <footer>
@@ -267,44 +326,41 @@ const Projects = () => {
     <StyledProjectsSection>
       <h2 ref={revealTitle}>Other Noteworthy Projects</h2>
 
-      <Link className="inline-link archive-link" to="/archive" ref={revealArchiveLink}>
+      <Link className="archive-link" to="/archive" ref={revealArchiveLink}>
         view the archive
       </Link>
 
       <ul className="projects-grid">
-        {prefersReducedMotion ? (
-          <>
-            {projectsToShow &&
-              projectsToShow.map(({ node }, i) => (
-                <StyledProject key={i}>{projectInner(node)}</StyledProject>
-              ))}
-          </>
-        ) : (
-          <TransitionGroup component={null}>
-            {projectsToShow &&
-              projectsToShow.map(({ node }, i) => (
-                <CSSTransition
+        <TransitionGroup component={null}>
+          {allProjectsToShow &&
+            allProjectsToShow.map(({ node }, i) => (
+              <CSSTransition
+                key={i}
+                classNames="fadeup"
+                timeout={i >= GRID_LIMIT ? (i - GRID_LIMIT) * 300 : 300}
+                exit={false}>
+                <StyledProject
                   key={i}
-                  classNames="fadeup"
-                  timeout={i >= GRID_LIMIT ? (i - GRID_LIMIT) * 300 : 300}
-                  exit={false}>
-                  <StyledProject
-                    key={i}
-                    ref={el => (revealProjects.current[i] = el)}
-                    style={{
-                      transitionDelay: `${i >= GRID_LIMIT ? (i - GRID_LIMIT) * 100 : 0}ms`,
-                    }}>
-                    {projectInner(node)}
-                  </StyledProject>
-                </CSSTransition>
-              ))}
-          </TransitionGroup>
-        )}
+                  ref={el => (revealProjects.current[i] = el)}
+                  style={{
+                    transitionDelay: `${i >= GRID_LIMIT ? (i - GRID_LIMIT) * 100 : 0}ms`,
+                  }}
+                  className={
+                    node.frontmatter.title === 'Smart Financial Analyzer Bot' 
+                      ? 'featured-bot' 
+                      : ''
+                  }
+                >
+                  {projectInner(node)}
+                </StyledProject>
+              </CSSTransition>
+            ))}
+        </TransitionGroup>
       </ul>
 
-      <button className="more-button" onClick={() => setShowMore(!showMore)}>
+      <Button className="more-button" onClick={() => setShowMore(!showMore)}>
         Show {showMore ? 'Less' : 'More'}
-      </button>
+      </Button>
     </StyledProjectsSection>
   );
 };

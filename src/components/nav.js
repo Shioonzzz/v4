@@ -1,289 +1,368 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'gatsby';
-import PropTypes from 'prop-types';
+// src/components/sections/Projects.js - Updated to include Financial Bot
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useStaticQuery, graphql } from 'gatsby';
+import { GatsbyImage, getImage } from 'gatsby-plugin-image';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import styled, { css } from 'styled-components';
-import { navLinks } from '@config';
-import { loaderDelay } from '@utils';
-import { useScrollDirection, usePrefersReducedMotion } from '@hooks';
-import { Menu } from '@components';
-import { IconLogo, IconHex } from '@components/icons';
+import styled from 'styled-components';
+import { srConfig } from '../config';
+import sr from '../utils/sr';
+import { Icon } from '../components/icons';
+import { mixins, media, Section, Button } from '../styles';
 
-const StyledHeader = styled.header`
-  ${({ theme }) => theme.mixins.flexBetween};
-  position: fixed;
-  top: 0;
-  z-index: 11;
-  padding: 0px 50px;
-  width: 100%;
-  height: var(--nav-height);
-  background-color: rgba(10, 25, 47, 0.85);
-  filter: none !important;
-  pointer-events: auto !important;
-  user-select: auto !important;
-  backdrop-filter: blur(10px);
-  transition: var(--transition);
+const StyledProjectsSection = styled(Section)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
-  @media (max-width: 1080px) {
-    padding: 0 40px;
-  }
-  @media (max-width: 768px) {
-    padding: 0 25px;
+  h2 {
+    font-size: clamp(24px, 5vw, var(--fz-heading));
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    ${props =>
-    props.scrollDirection === 'up' &&
-      !props.scrolledToTop &&
-      css`
-        height: var(--nav-scroll-height);
-        transform: translateY(0px);
-        background-color: rgba(10, 25, 47, 0.85);
-        box-shadow: 0 10px 30px -10px var(--navy-shadow);
-      `};
+  .archive-link {
+    font-family: var(--font-mono);
+    font-size: var(--fz-sm);
+    &:after {
+      bottom: 0.1em;
+    }
+  }
 
-    ${props =>
-    props.scrollDirection === 'down' &&
-      !props.scrolledToTop &&
-      css`
-        height: var(--nav-scroll-height);
-        transform: translateY(calc(var(--nav-scroll-height) * -1));
-        box-shadow: 0 10px 30px -10px var(--navy-shadow);
-      `};
+  .projects-grid {
+    ${mixins.resetList};
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-gap: 15px;
+    position: relative;
+    margin-top: 50px;
+
+    ${media.desktop`grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));`}
+  }
+
+  .more-button {
+    ${mixins.button};
+    margin: 80px auto 0;
   }
 `;
 
-const StyledNav = styled.nav`
-  ${({ theme }) => theme.mixins.flexBetween};
+const StyledProject = styled.div`
   position: relative;
-  width: 100%;
-  color: var(--lightest-slate);
-  font-family: var(--font-mono);
-  counter-reset: item 0;
-  z-index: 12;
+  cursor: default;
+  transition: var(--transition);
 
-  .logo {
-    ${({ theme }) => theme.mixins.flexCenter};
+  &:hover,
+  &:focus {
+    outline: 0;
+    .project-inner {
+      transform: translateY(-7px);
+    }
+  }
 
-    a {
+  .project-inner {
+    ${mixins.boxShadow};
+    ${mixins.flexBetween};
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    height: 100%;
+    padding: 2rem 1.75rem;
+    border-radius: var(--border-radius);
+    background-color: var(--light-navy);
+    border: 1px solid var(--light-navy);
+    transition: var(--transition);
+    overflow: auto;
+  }
+
+  .project-top {
+    ${mixins.flexBetween};
+    margin-bottom: 35px;
+
+    .folder {
       color: var(--green);
-      width: 42px;
-      height: 42px;
-      position: relative;
-      z-index: 1;
-
-      .hex-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: -1;
-        @media (prefers-reduced-motion: no-preference) {
-          transition: var(--transition);
-        }
+      svg {
+        width: 40px;
+        height: 40px;
       }
+    }
 
-      .logo-container {
-        position: relative;
-        z-index: 1;
+    .project-links {
+      display: flex;
+      align-items: center;
+      margin-right: -10px;
+      color: var(--light-slate);
+
+      a {
+        ${mixins.flexCenter};
+        padding: 5px 7px;
+
+        &.external {
+          svg {
+            width: 22px;
+            height: 22px;
+            margin-top: -4px;
+          }
+        }
+
         svg {
-          fill: none;
-          user-select: none;
-          @media (prefers-reduced-motion: no-preference) {
-            transition: var(--transition);
-          }
-          polygon {
-            fill: var(--navy);
-          }
-        }
-      }
-
-      &:hover,
-      &:focus {
-        outline: 0;
-        transform: translate(-4px, -4px);
-        .hex-container {
-          transform: translate(4px, 3px);
+          width: 20px;
+          height: 20px;
         }
       }
     }
   }
-`;
 
-const StyledLinks = styled.div`
-  display: flex;
-  align-items: center;
+  .project-title {
+    margin: 0 0 10px 0;
+    color: var(--lightest-slate);
+    font-size: var(--fz-xxl);
 
-  @media (max-width: 768px) {
-    display: none;
+    a {
+      position: static;
+
+      &:before {
+        content: '';
+        display: block;
+        position: absolute;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+      }
+    }
   }
 
-  ol {
-    ${({ theme }) => theme.mixins.flexBetween};
+  .project-description {
+    color: var(--light-slate);
+    font-size: 17px;
+
+    a {
+      ${mixins.inlineLink};
+    }
+  }
+
+  .project-tech-list {
+    display: flex;
+    align-items: flex-end;
+    flex-grow: 1;
+    flex-wrap: wrap;
     padding: 0;
-    margin: 0;
+    margin: 20px 0 0 0;
     list-style: none;
 
     li {
-      margin: 0 5px;
-      position: relative;
-      counter-increment: item 1;
-      font-size: var(--fz-xs);
+      font-family: var(--font-mono);
+      font-size: var(--fz-xxs);
+      line-height: 1.75;
 
-      a {
-        padding: 10px;
-
-        &:before {
-          content: '0' counter(item) '.';
-          margin-right: 5px;
-          color: var(--green);
-          font-size: var(--fz-xxs);
-          text-align: right;
-        }
+      &:not(:last-of-type) {
+        margin-right: 15px;
       }
     }
   }
 
-  .resume-button {
-    ${({ theme }) => theme.mixins.smallButton};
-    margin-left: 15px;
-    font-size: var(--fz-xs);
+  // Special styling for featured bot project
+  &.featured-bot {
+    .project-inner {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--light-navy) 100%);
+      border: 1px solid var(--green);
+      box-shadow: 0 10px 30px -15px var(--green-shadow);
+      
+      &:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px -15px var(--green-shadow);
+      }
+    }
+
+    .folder {
+      color: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    .project-title {
+      color: var(--green);
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
   }
 `;
 
-const Nav = ({ isHome }) => {
-  const [isMounted, setIsMounted] = useState(!isHome);
-  const scrollDirection = useScrollDirection('down');
-  const [scrolledToTop, setScrolledToTop] = useState(true);
-  const prefersReducedMotion = usePrefersReducedMotion();
+const Projects = () => {
+  const data = useStaticQuery(graphql`
+    query {
+      projects: allMarkdownRemark(
+        filter: {
+          fileAbsolutePath: { regex: "/content/projects/" }
+          frontmatter: { showInProjects: { ne: false } }
+        }
+        sort: { fields: [frontmatter___date], order: DESC }
+      ) {
+        edges {
+          node {
+            frontmatter {
+              title
+              tech
+              github
+              external
+              featured
+            }
+            html
+          }
+        }
+      }
+    }
+  `);
 
-  const handleScroll = () => {
-    setScrolledToTop(window.pageYOffset < 50);
-  };
+  const [showMore, setShowMore] = useState(false);
+  const revealTitle = useRef(null);
+  const revealArchiveLink = useRef(null);
+  const revealProjects = useRef([]);
 
   useEffect(() => {
-    if (prefersReducedMotion) {
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      setIsMounted(true);
-    }, 100);
-
-    window.addEventListener('scroll', handleScroll);
-
-    return () => {
-      clearTimeout(timeout);
-      window.removeEventListener('scroll', handleScroll);
-    };
+    sr.reveal(revealTitle.current, srConfig());
+    sr.reveal(revealArchiveLink.current, srConfig());
+    revealProjects.current.forEach((ref, i) => sr.reveal(ref, srConfig(i * 100)));
   }, []);
 
-  const timeout = isHome ? loaderDelay : 0;
-  const fadeClass = isHome ? 'fade' : '';
-  const fadeDownClass = isHome ? 'fadedown' : '';
+  const GRID_LIMIT = 6;
+  const projects = data.projects.edges.filter(({ node }) => node);
+  const firstSix = projects.slice(0, GRID_LIMIT);
+  const projectsToShow = showMore ? projects : firstSix;
 
-  const Logo = (
-    <div className="logo" tabIndex="-1">
-      {isHome ? (
-        <a href="/" aria-label="home">
-          <div className="hex-container">
-            <IconHex />
-          </div>
-          <div className="logo-container">
-            <IconLogo />
-          </div>
-        </a>
-      ) : (
-        <Link to="/" aria-label="home">
-          <div className="hex-container">
-            <IconHex />
-          </div>
-          <div className="logo-container">
-            <IconLogo />
-          </div>
-        </Link>
-      )}
-    </div>
-  );
+  // Add Smart Financial Analyzer as a special project
+  const botProject = {
+    node: {
+      frontmatter: {
+        title: 'Smart Financial Analyzer Bot',
+        tech: ['React', 'Python', 'TensorFlow', 'Three.js', 'FastAPI', 'WebSocket'],
+        github: 'https://github.com/yourusername/smart-financial-analyzer',
+        external: '/financial-analyzer',
+        featured: true
+      },
+      html: `
+        <p>
+          Bot AI canggih yang menganalisis kondisi keuangan dengan visualisasi 3D interaktif. 
+          Menggunakan machine learning untuk insights personal dan rekomendasi investasi yang 
+          disesuaikan dengan profil risiko pengguna.
+        </p>
+        <p>
+          Fitur utama meliputi analisis pengeluaran real-time, rekomendasi investasi berbasis AI, 
+          risk assessment personal, dan portfolio tracking dengan alert sistem.
+        </p>
+      `
+    }
+  };
 
-  const ResumeLink = (
-    <a className="resume-button" href="/resume.pdf" target="_blank" rel="noopener noreferrer">
-      Resume
-    </a>
-  );
+  // Insert bot project at the beginning
+  const allProjectsToShow = [botProject, ...projectsToShow];
+
+  const projectInner = (node) => {
+    const { frontmatter, html } = node;
+    const { github, external, title, tech, featured } = frontmatter;
+
+    return (
+      <div className="project-inner">
+        <header>
+          <div className="project-top">
+            <div className="folder">
+              {title === 'Smart Financial Analyzer Bot' ? (
+                <Icon name="Robot" />
+              ) : (
+                <Icon name="Folder" />
+              )}
+            </div>
+            <div className="project-links">
+              {github && (
+                <a href={github} aria-label="GitHub Link" target="_blank" rel="noreferrer">
+                  <Icon name="GitHub" />
+                </a>
+              )}
+              {external && (
+                <a
+                  href={external}
+                  aria-label="External Link"
+                  className="external"
+                  target={title === 'Smart Financial Analyzer Bot' ? '_self' : '_blank'}
+                  rel="noreferrer"
+                >
+                  <Icon name="External" />
+                </a>
+              )}
+            </div>
+          </div>
+
+          <h3 className="project-title">
+            <a 
+              href={external || github} 
+              target={title === 'Smart Financial Analyzer Bot' ? '_self' : '_blank'}
+              rel="noreferrer"
+            >
+              {title}
+            </a>
+          </h3>
+
+          <div
+            className="project-description"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        </header>
+
+        <footer>
+          {tech && (
+            <ul className="project-tech-list">
+              {tech.map((tech, i) => (
+                <li key={i}>{tech}</li>
+              ))}
+            </ul>
+          )}
+        </footer>
+      </div>
+    );
+  };
 
   return (
-    <StyledHeader scrollDirection={scrollDirection} scrolledToTop={scrolledToTop}>
-      <StyledNav>
-        {prefersReducedMotion ? (
-          <>
-            {Logo}
+    <StyledProjectsSection>
+      <h2 ref={revealTitle}>Other Noteworthy Projects</h2>
 
-            <StyledLinks>
-              <ol>
-                {navLinks &&
-                  navLinks.map(({ url, name }, i) => (
-                    <li key={i}>
-                      <Link to={url}>{name}</Link>
-                    </li>
-                  ))}
-              </ol>
-              <div>{ResumeLink}</div>
-            </StyledLinks>
+      <Link className="archive-link" to="/archive" ref={revealArchiveLink}>
+        view the archive
+      </Link>
 
-            <Menu />
-          </>
-        ) : (
-          <>
-            <TransitionGroup component={null}>
-              {isMounted && (
-                <CSSTransition classNames={fadeClass} timeout={timeout}>
-                  <>{Logo}</>
-                </CSSTransition>
-              )}
-            </TransitionGroup>
+      <ul className="projects-grid">
+        <TransitionGroup component={null}>
+          {allProjectsToShow &&
+            allProjectsToShow.map(({ node }, i) => (
+              <CSSTransition
+                key={i}
+                classNames="fadeup"
+                timeout={i >= GRID_LIMIT ? (i - GRID_LIMIT) * 300 : 300}
+                exit={false}>
+                <StyledProject
+                  key={i}
+                  ref={el => (revealProjects.current[i] = el)}
+                  style={{
+                    transitionDelay: `${i >= GRID_LIMIT ? (i - GRID_LIMIT) * 100 : 0}ms`,
+                  }}
+                  className={
+                    node.frontmatter.title === 'Smart Financial Analyzer Bot' 
+                      ? 'featured-bot' 
+                      : ''
+                  }
+                >
+                  {projectInner(node)}
+                </StyledProject>
+              </CSSTransition>
+            ))}
+        </TransitionGroup>
+      </ul>
 
-            <StyledLinks>
-              <ol>
-                <TransitionGroup component={null}>
-                  {isMounted &&
-                    navLinks &&
-                    navLinks.map(({ url, name }, i) => (
-                      <CSSTransition key={i} classNames={fadeDownClass} timeout={timeout}>
-                        <li key={i} style={{ transitionDelay: `${isHome ? i * 100 : 0}ms` }}>
-                          <Link to={url}>{name}</Link>
-                        </li>
-                      </CSSTransition>
-                    ))}
-                </TransitionGroup>
-              </ol>
-
-              <TransitionGroup component={null}>
-                {isMounted && (
-                  <CSSTransition classNames={fadeDownClass} timeout={timeout}>
-                    <div style={{ transitionDelay: `${isHome ? navLinks.length * 100 : 0}ms` }}>
-                      {ResumeLink}
-                    </div>
-                  </CSSTransition>
-                )}
-              </TransitionGroup>
-            </StyledLinks>
-
-            <TransitionGroup component={null}>
-              {isMounted && (
-                <CSSTransition classNames={fadeClass} timeout={timeout}>
-                  <Menu />
-                </CSSTransition>
-              )}
-            </TransitionGroup>
-          </>
-        )}
-      </StyledNav>
-    </StyledHeader>
+      <Button className="more-button" onClick={() => setShowMore(!showMore)}>
+        Show {showMore ? 'Less' : 'More'}
+      </Button>
+    </StyledProjectsSection>
   );
 };
 
-Nav.propTypes = {
-  isHome: PropTypes.bool,
-};
-
-export default Nav;
+export default Projects;

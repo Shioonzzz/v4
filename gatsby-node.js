@@ -1,17 +1,12 @@
-/**
- * Implement Gatsby's Node APIs in this file.
- *
- * See: https://www.gatsbyjs.org/docs/node-apis/
- */
-
+// gatsby-node.js - Add routing for financial bot
 const path = require('path');
-const _ = require('lodash');
 
 exports.createPages = async ({ actions, graphql, reporter }) => {
   const { createPage } = actions;
-  const postTemplate = path.resolve(`src/templates/post.js`);
-  const tagTemplate = path.resolve('src/templates/tag.js');
 
+  // Create pages for markdown files (existing functionality)
+  const blogPostTemplate = path.resolve('src/templates/post.js');
+  
   const result = await graphql(`
     {
       postsRemark: allMarkdownRemark(
@@ -23,13 +18,23 @@ exports.createPages = async ({ actions, graphql, reporter }) => {
           node {
             frontmatter {
               slug
+              title
             }
           }
         }
       }
-      tagsGroup: allMarkdownRemark(limit: 2000) {
-        group(field: frontmatter___tags) {
-          fieldValue
+      projectsRemark: allMarkdownRemark(
+        filter: { fileAbsolutePath: { regex: "/content/projects/" } }
+        sort: { order: DESC, fields: [frontmatter___date] }
+        limit: 1000
+      ) {
+        edges {
+          node {
+            frontmatter {
+              slug
+              title
+            }
+          }
         }
       }
     }
@@ -37,52 +42,94 @@ exports.createPages = async ({ actions, graphql, reporter }) => {
 
   // Handle errors
   if (result.errors) {
-    reporter.panicOnBuild(`Error while running GraphQL query.`);
+    reporter.panicOnBuild('Error while running GraphQL query.');
     return;
   }
 
-  // Create post detail pages
+  // Create blog post pages
   const posts = result.data.postsRemark.edges;
-
   posts.forEach(({ node }) => {
+    const { slug } = node.frontmatter;
     createPage({
-      path: node.frontmatter.slug,
-      component: postTemplate,
-      context: {},
-    });
-  });
-
-  // Extract tag data from query
-  const tags = result.data.tagsGroup.group;
-  // Make tag pages
-  tags.forEach(tag => {
-    createPage({
-      path: `/pensieve/tags/${_.kebabCase(tag.fieldValue)}/`,
-      component: tagTemplate,
+      path: `/pensieve/${slug}/`,
+      component: blogPostTemplate,
       context: {
-        tag: tag.fieldValue,
+        slug,
       },
     });
   });
+
+  // Create project detail pages (if needed)
+  const projects = result.data.projectsRemark.edges;
+  projects.forEach(({ node }) => {
+    const { slug } = node.frontmatter;
+    if (slug) {
+      createPage({
+        path: `/projects/${slug}/`,
+        component: path.resolve('src/templates/project.js'),
+        context: {
+          slug,
+        },
+      });
+    }
+  });
+
+  // Create financial bot page (already handled by page file, but can add dynamic routing here if needed)
+  // This is useful if you want to add dynamic features like user-specific URLs
+  
+  // Example: Create user-specific bot pages
+  // const users = ['demo', 'test']; // This would come from your API/database
+  // users.forEach(user => {
+  //   createPage({
+  //     path: `/financial-analyzer/${user}/`,
+  //     component: path.resolve('src/templates/user-bot.js'),
+  //     context: {
+  //       userId: user,
+  //     },
+  //   });
+  // });
 };
 
-// https://www.gatsbyjs.org/docs/node-apis/#onCreateWebpackConfig
+exports.onCreateNode = ({ node, actions, getNode }) => {
+  const { createNodeField } = actions;
+
+  // Add slug field to markdown nodes
+  if (node.internal.type === 'MarkdownRemark') {
+    const value = node.frontmatter.slug || node.frontmatter.title;
+    createNodeField({
+      name: 'slug',
+      node,
+      value: value ? value.toLowerCase().replace(/\s+/g, '-') : '',
+    });
+  }
+};
+
+exports.onCreatePage = ({ page, actions }) => {
+  const { createPage, deletePage } = actions;
+
+  // Add custom handling for financial bot page
+  if (page.path.match(/^\/financial-analyzer/)) {
+    deletePage(page);
+    createPage({
+      ...page,
+      context: {
+        ...page.context,
+        // Add any custom context for the bot page
+        isBot: true,
+        requiresAuth: false, // Set to true if you want to require authentication
+      },
+    });
+  }
+};
+
+// Handle webpack configuration for Three.js and other libraries
 exports.onCreateWebpackConfig = ({ stage, loaders, actions }) => {
-  // https://www.gatsbyjs.org/docs/debugging-html-builds/#fixing-third-party-modules
   if (stage === 'build-html' || stage === 'develop-html') {
     actions.setWebpackConfig({
       module: {
         rules: [
           {
-            test: /scrollreveal/,
-            use: loaders.null(),
-          },
-          {
-            test: /animejs/,
-            use: loaders.null(),
-          },
-          {
-            test: /miniraf/,
+            test: /three/,
             use: loaders.null(),
           },
         ],
@@ -90,18 +137,21 @@ exports.onCreateWebpackConfig = ({ stage, loaders, actions }) => {
     });
   }
 
+  // Add polyfills and resolve configurations
   actions.setWebpackConfig({
     resolve: {
-      alias: {
-        '@components': path.resolve(__dirname, 'src/components'),
-        '@config': path.resolve(__dirname, 'src/config'),
-        '@fonts': path.resolve(__dirname, 'src/fonts'),
-        '@hooks': path.resolve(__dirname, 'src/hooks'),
-        '@images': path.resolve(__dirname, 'src/images'),
-        '@pages': path.resolve(__dirname, 'src/pages'),
-        '@styles': path.resolve(__dirname, 'src/styles'),
-        '@utils': path.resolve(__dirname, 'src/utils'),
+      fallback: {
+        fs: false,
+        path: require.resolve('path-browserify'),
+        crypto: require.resolve('crypto-browserify'),
+        stream: require.resolve('stream-browserify'),
+        util: require.resolve('util'),
+        buffer: require.resolve('buffer'),
+        assert: require.resolve('assert'),
       },
     },
+    plugins: [
+      // Add any additional webpack plugins if needed
+    ],
   });
 };
